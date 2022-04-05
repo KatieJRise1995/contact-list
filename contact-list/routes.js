@@ -1,19 +1,21 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import "react-native-gesture-handler";
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet } from "react-native";
+import Contacts from "./screens/Contacts";
+import Profile from "./screens/Profile";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import TabNavigator from "./components/TabNavigator";
+import DrawerNavigation from "./components/DrawerNavigation";
+import Options from "./screens/Options";
+import * as Linking from "expo-linking";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialIcons } from '@expo/vector-icons';
-import Favorites from './screens/Favorites';
-import Contacts from './screens/Contacts';
-import Profile from './screens/Profile';
-import User from './screens/User';
-import Options from './screens/Options';
-import colors from './utils/colors';
 
 const getTabBarIcon = icon => ({ tintColor }) => (
   <MaterialIcons name={icon} size={26} style={{ color: tintColor }} />
 );
 
-const ContactsScreens = createNativeStackNavigator(
+const ContactsScreens = createStackNavigator(
   {
     Contacts: {
       screen: Contacts,
@@ -30,7 +32,7 @@ const ContactsScreens = createNativeStackNavigator(
   },
 );
 
-const FavoritesScreens = createNativeStackNavigator(
+const FavoritesScreens = createStackNavigator(
   {
     Favorites: {
       screen: Favorites,
@@ -47,7 +49,7 @@ const FavoritesScreens = createNativeStackNavigator(
   },
 );
 
-const UserScreens = createNativeStackNavigator(
+const UserScreens = createStackNavigator(
   {
     User: {
       screen: User,

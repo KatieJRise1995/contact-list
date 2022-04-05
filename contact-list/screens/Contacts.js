@@ -1,107 +1,72 @@
-import React from 'react';
-import {StyleSheet,Text,View,FlatList,ActivityIndicator,Linking,} from 'react-native';
-import ContactListItem from '../components/ContactListItem';
-import { fetchContacts } from '../utils/api';
-import getURLParams from '../utils/getURLParams';
-import store from '../store';
+import {StyleSheet,Text,View,FlatList,ActivityIndicator,Alert,} from "react-native";
+import React, { useState, useEffect } from "react";
+import ContactListItem from "../components/ContactListItem";
+import { fetchContacts } from "../utils/api";
 
 const keyExtractor = ({ phone }) => phone;
 
-export default class Contacts extends React.Component {
-  static navigationOptions = () => ({
-    title: 'Contacts',
-  });
+const Contacts = ({ navigation: { navigate } }) => {
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  state = {
-    contacts: store.getState().contacts,
-    loading: store.getState().isFetchingContacts,
-    error: store.getState().error,
-  };
-
-  async componentDidMount() {
-    this.unsubscribe = store.onChange(() =>
-      this.setState({
-        contacts: store.getState().contacts,
-        loading: store.getState().isFetchingContacts,
-        error: store.getState().error,
-      }));
-
-    const contacts = await fetchContacts();
-
-    store.setState({ contacts, isFetchingContacts: false });
-
-    Linking.addEventListener('url', this.handleOpenUrl);
-
-    const url = await Linking.getInitialURL();
-    this.handleOpenUrl({ url });
-  }
-
-  componentWillUnmount() {
-    Linking.removeEventListener('url', this.handleOpenUrl);
-    this.unsubscribe();
-  }
-
-  handleOpenUrl(event) {
-    const { navigation: { navigate } } = this.props;
-    const { url } = event;
-    const params = getURLParams(url);
-
-    if (params.name) {
-      const queriedContact = store
-        .getState()
-        .contacts.find(contact =>
-          contact.name.split(' ')[0].toLowerCase() ===
-            params.name.toLowerCase());
-
-      if (queriedContact) {
-        navigate('Profile', { id: queriedContact.id });
-      }
+  useEffect(async () => {
+    try {
+      const contacts = await fetchContacts();
+      setContacts(contacts);
+      setLoading(false);
+      setError(false);
+    } catch (error) {
+      setError(true);
+      setLoading(false);
+      Alert.alert("Error", error, [
+        {
+          text: "Cancel",
+          onPress: () => console.log(error),
+          style: "cancel",
+        },
+      ]);
     }
-  }
+  }, []);
 
-  renderContact = ({ item }) => {
-    const { navigation: { navigate } } = this.props;
-    const {
-      id, name, avatar, phone,
-    } = item;
+  const contactsSorted = contacts.sort((a, b) => a.name.localeCompare(b.name));
+
+  const renderContact = ({ item }) => {
+    const { name, avatar, phone, cell, email } = item;
 
     return (
       <ContactListItem
         name={name}
         avatar={avatar}
         phone={phone}
-        onPress={() => navigate('Profile', { id })}
+        onPress={() =>
+          navigate("Profile", { avatar, cell, phone, email, name })
+        }
       />
     );
   };
 
-  render() {
-    const { contacts, loading, error } = this.state;
+  return (
+    <View style={styles.container}>
+      {loading && <ActivityIndicator size={"large"} />}
+      {error && <Text>Error: {error}</Text>}
+      {!loading && !error && (
+        <FlatList
+          data={contactsSorted}
+          keyExtractor={keyExtractor}
+          renderItem={renderContact}
+        />
+      )}
+    </View>
+  );
+};
 
-    const contactsSorted = contacts.sort((a, b) =>
-      a.name.localeCompare(b.name));
-
-    return (
-      <View style={styles.container}>
-        {loading && <ActivityIndicator size="large" />}
-        {error && <Text>Error...</Text>}
-        {!loading &&
-          !error && (
-            <FlatList
-              data={contactsSorted}
-              keyExtractor={keyExtractor}
-              renderItem={this.renderContact}
-            />
-          )}
-      </View>
-    );
-  }
-}
+export default Contacts;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    justifyContent: 'center',
+    backgroundColor: "white",
+    justifyContent: "center",
     flex: 1,
   },
 });
